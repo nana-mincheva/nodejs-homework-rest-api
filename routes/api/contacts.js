@@ -35,16 +35,21 @@ router.get('/', async (req, res, next) => {
 router.get('/:contactId', async (req, res, next) => {
   const { contactId } = req.params;
   const contact = await getContactById(contactId);
-  if (contact === null) {
-    return res.status(404).json({ message: "Not Found!" });
+  if (!contact) {
+    return res.status(404).json({
+      status: 'error',
+      code: 404,
+      message: "Not Found!"
+    });
+  } else {
+    res.json({
+      status: 'success',
+      code: 200,
+      data: {
+        contact
+      },
+    })
   }
-  res.json({
-    status: 'success',
-    code: 200,
-    data: {
-      contact
-    },
-  })
 });
 
 router.post('/', async (req, res, next) => {
@@ -66,16 +71,18 @@ router.post('/', async (req, res, next) => {
 });
 
 router.delete('/:contactId', async (req, res, next) => {
-  const { contactId } = req.params;
-  const contactToRemove = await getContactById(contactId);
-  if (contactToRemove) {
-    await removeContact(contactId);
-    res.status(200).json({ message: "contact deleted" });
-  }
-  if (!contactToRemove) {
-    res.status(404).json({ message: "Not found" });
-  }
-});
+	try {
+		const {contactId} = req.params
+		const contactToRemove = await removeContact(contactId)
+		if (!contactToRemove) {
+			return res.status(404).json({ message: "Not found" });
+		}
+		res.json({message: "Contact deleted"})
+	} catch (error) {
+		next(error)
+	}
+})
+
 
 router.put('/:contactId', async (req, res, next) => {
   const { contactId } = req.params;
