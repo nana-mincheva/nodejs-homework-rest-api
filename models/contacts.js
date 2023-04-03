@@ -6,17 +6,17 @@ const contactsPath = path.join(__dirname, "../models/contacts.json");
 const listContacts = async () => {
   const result = await fs.readFile(contactsPath, "utf-8");
   return JSON.parse(result);
-}
+};
 
 const getContactById = async (contactId) => {
-   try {
-        const contacts = await listContacts();
-        const contact = contacts.find((contact) => contact.id === contactId);
-     return contact;
-    } catch (err) {
-      console.log(err);
-    }
-}
+  try {
+    const contacts = await listContacts();
+    const contact = contacts.find((contact) => contact.id === contactId);
+    return contact;
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 
 const saveContacts = async (contacts) => {
@@ -29,16 +29,16 @@ const saveContacts = async (contacts) => {
 };
 
 const removeContact = async (contactId) => {
-	const contacts = await listContacts()
-	const contact = await getContactById(contactId)
+  const contacts = await listContacts()
+  const contact = await getContactById(contactId)
 
-	if (!contact) {
-		return null
-	}
-	const updatedContacts = contacts.filter((item) => item.id !== contactId)
-	await fs.writeFile(contactsPath, JSON.stringify(updatedContacts, null, 2))
-	return contact
-}
+  if (!contact) {
+    return null
+  }
+  const updatedContacts = contacts.filter((item) => item.id !== contactId)
+  await fs.writeFile(contactsPath, JSON.stringify(updatedContacts, null, 2))
+  return contact
+};
 
 const addContact = async (name, email, phone) => {
   try {
@@ -52,7 +52,7 @@ const addContact = async (name, email, phone) => {
 };
 
 const updateContact = async (contactId, body) => {
-   try {
+  try {
     const contacts = await listContacts();
     const updatedContactIndex = await contacts.findIndex(
       (contact) => contact.id === contactId
@@ -67,7 +67,7 @@ const updateContact = async (contactId, body) => {
   } catch (err) {
     console.log(err);
   }
-}
+};
 
 module.exports = {
   listContacts,
@@ -75,4 +75,4 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
-}
+};
