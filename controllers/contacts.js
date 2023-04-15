@@ -1,34 +1,46 @@
 const Contact = require('../models/contacts');
+const { ctrlWrapper } = require("../helpers");
 const { schemaCreateContact, schemaUpdateContact, schemaUpdateStatusContact } = require("../schema/schemaValidate");
 
-const getAll = async (req, res, next) => {
-    try {
-        const contactList = await Contact.find()
-        res.json(contactList)
-    } catch (error) {
-        console.error(error);
-        next(error);
+const getAll = async (req, res) => {
+    const { _id: owner } = req.user;
+    const { page = 1, limit = 10, favorite } = req.query;
+    const skip = (page - 1) * limit;
+
+    let contactList = [];
+
+    if (favorite) {
+        contactList = await Contact.find({ owner }, "-createdAt -updatedAt",
+            { skip, limit, }
+        ).where('favorite').equals(favorite).populate("owner", "email")
+
     }
+    else {
+        contactList = await Contact.find({ owner }, "-createdAt -updatedAt",
+            { skip, limit, }
+        ).populate("owner", "email")
+    }
+    res.json(contactList)
 };
 
 const getContactById = async (req, res, next) => {
-  const { contactId } = req.params
-  const contact = await Contact.findById(contactId)
-  if (!contact) {
-    res.status(404).json({
-      status: 'error',
-      code: 404,
-      message: `Contact with id ${contactId} not found`
-    })
-    return
-  }
-  res.json(
-    {
-      status: 'success',
-      code: 200,
-      contact
-    })
-}
+    const { contactId } = req.params
+    const contact = await Contact.findById(contactId)
+    if (!contact) {
+        res.status(404).json({
+            status: 'error',
+            code: 404,
+            message: `Contact with id ${contactId} not found`
+        })
+        return
+    }
+    res.json(
+        {
+            status: 'success',
+            code: 200,
+            contact
+        })
+};
 
 const removeContact = async (req, res, next) => {
     const { contactId } = req.params;
@@ -52,21 +64,17 @@ const removeContact = async (req, res, next) => {
     }
 };
 
-const addContact = async (req, res, next) => {
-  const { name, email, phone } = req.body;
+const addContact = async (req, res) => {
+    const { _id: owner } = req.user;
+    const { name, email, phone } = req.body;
     const { error, value } = schemaCreateContact.validate({ name, phone, email })
 
     if (error) {
         return res.status(400).json({ message: "missing required name field" });
     }
 
-    try {
-        const newContact = await Contact.create(value)
-        res.status(201).json(newContact);
-    } catch (error) {
-        console.error(error);
-        next(error);
-    }
+    const newContact = await Contact.create({ ...value, owner })
+    res.status(201).json(newContact);
 };
 
 const updateContact = async (req, res, next) => {
@@ -135,10 +143,10 @@ const updateStatusContact = async (req, res, next) => {
 };
 
 module.exports = {
-    getAll,
-    getContactById,
-    removeContact,
-    addContact,
-    updateContact,
-    updateStatusContact
+    getAll: ctrlWrapper(getAll),
+    getContactById: ctrlWrapper(getContactById),
+    addContact: ctrlWrapper(addContact),
+    removeContact: ctrlWrapper(removeContact),
+    updateContact: ctrlWrapper(updateContact),
+    updateStatusContact: ctrlWrapper(updateStatusContact)
 };
