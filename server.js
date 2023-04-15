@@ -4,6 +4,8 @@ const app = require('./app')
 const { PORT = 3000 } = process.env;
 const DB_HOST = "mongodb+srv://nana_mincheva:QnOROcHCjJ4GfhUS@cluster0.sjxkzhb.mongodb.net/test";
 
+mongoose.set("strictQuery", true);
+
 mongoose.connect(DB_HOST)
   .then(() => app.listen(PORT, () => {
     console.log('Database connection successful');
