@@ -7,7 +7,9 @@ require("dotenv").config();
 const secret = process.env.SECRET_KEY;
 
 const register = async (req, res) => {
-  const { email, password } = req.body;
+  const password = req.body.password;
+  const email = req.body.email;
+  // const { email, password } = req.body;
   const user = await User.findOne({ email });
   if (user) {
     throw HttpError(409, "Email in use");
@@ -54,7 +56,9 @@ const login = async (req, res) => {
 };
 
 const getCurrent = async (req, res) => {
-  const { email, subscription } = req.user;
+  const email = req.body.email;
+  const subscription = req.user.subscription;
+  // const { email, subscription } = req.user;
   res.json({
     user: {
       email,
@@ -64,7 +68,8 @@ const getCurrent = async (req, res) => {
 };
 
 const logout = async (req, res) => {
-    const { _id } = req.user;
+    // const { _id } = req.user;
+  const _id = req.user._id;
     console.log(req.user);
     await User.findByIdAndUpdate(_id, { token: "" });
 
@@ -74,7 +79,9 @@ const logout = async (req, res) => {
 };
 
 const updateSubscription = async (req, res) => {
-    const { _id, email } = req.user;
+  const _id = req.user._id;
+  const email = req.user.email;
+    // const { _id, email } = req.user;
     const { subscription } = req.body;
     await User.findByIdAndUpdate(_id, { subscription });
 

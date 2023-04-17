@@ -3,7 +3,8 @@ const { ctrlWrapper } = require("../helpers");
 const { schemaCreateContact, schemaUpdateContact, schemaUpdateStatusContact } = require("../schema/schemaValidate");
 
 const getAll = async (req, res) => {
-    const { _id } = req.user;
+    // const { _id } = req.user;
+    const _id = req.user._id;
     const { page = 1, limit = 10} = req.query;
     const skip = (page - 1) * limit;
     const contactList = await Contact.find({ owner: _id }, "", { skip, limit: Number(limit) })
