@@ -21,7 +21,7 @@ const getAll = async (req, res) => {
 const getContactById = async (req, res, next) => {
     const { contactId } = req.params;
     const { _id } = req.user;
-    const contact = await Contact.findById(contactId).find({ owner: _id });
+    const contact = await Contact.findOneAndUpdate({ _id: contactId, owner: _id }, req.body, { new: true });
     if (!contact) {
         res.status(404).json({
             status: 'error',
