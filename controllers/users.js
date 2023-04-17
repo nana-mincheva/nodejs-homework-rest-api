@@ -31,7 +31,9 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
-    const { email, password } = req.body;
+  // const { email, password } = req.body;
+  const email = req.body.email;
+  const password  = req.body.password ;
     const user = await User.findOne({ email });
     if (!user) {
         throw HttpError(401, "Email or password is wrong");

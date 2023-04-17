@@ -56,7 +56,8 @@ const removeContact = async (req, res, next) => {
 };
 
 const addContact = async (req, res) => {
-    const { _id } = req.user;
+    const _id = req.user._id;
+    // const { _id } = req.user;
     const { name, email, phone } = req.body;
     const { error, value } = schemaCreateContact.validate({ name, phone, email })
 
