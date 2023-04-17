@@ -3,29 +3,24 @@ const { ctrlWrapper } = require("../helpers");
 const { schemaCreateContact, schemaUpdateContact, schemaUpdateStatusContact } = require("../schema/schemaValidate");
 
 const getAll = async (req, res) => {
-    const { _id: owner } = req.user;
-    const { page = 1, limit = 10, favorite } = req.query;
+    const { _id } = req.user;
+    const { page = 1, limit = 10} = req.query;
     const skip = (page - 1) * limit;
-
-    let contactList = [];
-
-    if (favorite) {
-        contactList = await Contact.find({ owner }, "-createdAt -updatedAt",
-            { skip, limit, }
-        ).where('favorite').equals(favorite).populate("owner", "email")
-
-    }
-    else {
-        contactList = await Contact.find({ owner }, "-createdAt -updatedAt",
-            { skip, limit, }
-        ).populate("owner", "email")
-    }
-    res.json(contactList)
+    const contactList = await Contact.find({ owner: _id }, "", { skip, limit: Number(limit) })
+        .populate("owner", "_id name email");
+     res.json({
+            status: "success",
+            code: 200,
+            data: {
+            result: contactList,
+            },
+        });
 };
 
 const getContactById = async (req, res, next) => {
-    const { contactId } = req.params
-    const contact = await Contact.findById(contactId)
+    const { contactId } = req.params;
+    const { _id } = req.user;
+    const contact = await Contact.findById(contactId).find({ owner: _id });
     if (!contact) {
         res.status(404).json({
             status: 'error',
@@ -44,9 +39,8 @@ const getContactById = async (req, res, next) => {
 
 const removeContact = async (req, res, next) => {
     const { contactId } = req.params;
-
-    try {
-        const result = await Contact.findByIdAndRemove({ _id: contactId })
+    const { _id } = req.user;
+    const result = await Contact.findByIdAndRemove({ contactId, owner: _id });
         if (result) {
             res.json(result)
         }
@@ -58,14 +52,10 @@ const removeContact = async (req, res, next) => {
                 data: 'Not Found',
             })
         }
-    } catch (error) {
-        console.error(error);
-        next(error);
-    }
 };
 
 const addContact = async (req, res) => {
-    const { _id: owner } = req.user;
+    const { _id } = req.user;
     const { name, email, phone } = req.body;
     const { error, value } = schemaCreateContact.validate({ name, phone, email })
 
@@ -73,12 +63,13 @@ const addContact = async (req, res) => {
         return res.status(400).json({ message: "missing required name field" });
     }
 
-    const newContact = await Contact.create({ ...value, owner })
+    const newContact = await Contact.create({ ...value, owner: _id })
     res.status(201).json(newContact);
 };
 
 const updateContact = async (req, res, next) => {
     const { contactId } = req.params;
+    const { _id } = req.user;
     const { name, email, phone } = req.body;
     const { error, value } = schemaUpdateContact.validate({ name, phone, email })
 
@@ -87,7 +78,7 @@ const updateContact = async (req, res, next) => {
     }
 
     try {
-        const result = await Contact.findOneAndUpdate({ _id: contactId }, value, { returnOriginal: false });
+        const result = await Contact.findOneAndUpdate({ _id: contactId, owner: _id }, value, { new: true });
         if (result) {
             res.json(result)
         }
@@ -96,7 +87,6 @@ const updateContact = async (req, res, next) => {
                 status: 'error',
                 code: 404,
                 message: `Not found contact id: ${contactId}`,
-                data: 'Not Found',
             })
         }
     } catch (error) {
@@ -107,35 +97,34 @@ const updateContact = async (req, res, next) => {
 
 const updateStatusContact = async (req, res, next) => {
     const { contactId } = req.params;
-    const { favorite = false } = req.body;
+    const { favorite } = req.body;
+    const { _id } = req.user;
 
     if (!favorite) {
         return res.status(400).json({
             status: 'error',
             code: 400,
             message: 'missing field favorite',
-        })
+        });
     }
 
-    const { error, value } = schemaUpdateStatusContact.validate({ favorite });
+    const { error, value: validatedData } = schemaUpdateStatusContact.validate({ favorite });
 
     if (error) {
-        return res.status(400).json({ message: "missing required name field" });
+        return res.status(400).json({ message: `missing required name field` });
     }
-
     try {
-        const result = await Contact.findByIdAndUpdate({ _id: contactId }, value, { returnOriginal: false })
-        if (result) {
-            res.json(result)
-        }
-        else {
-            res.status(404).json({
+        const result = await Contact.findOneAndUpdate({ _id: contactId, owner: _id }, validatedData, { new: true });
+
+        if (!result) {
+            return res.status(404).json({
                 status: 'error',
                 code: 404,
                 message: `Not found contact id: ${contactId}`,
                 data: 'Not Found',
-            })
+            });
         }
+        res.json(result);
     } catch (error) {
         console.error(error);
         next(error);
