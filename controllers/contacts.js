@@ -3,7 +3,6 @@ const { ctrlWrapper } = require("../helpers");
 const { schemaCreateContact, schemaUpdateContact, schemaUpdateStatusContact } = require("../schema/schemaValidate");
 
 const getAll = async (req, res) => {
-    // const { _id } = req.user;
     const _id = req.user._id;
     const { page = 1, limit = 10} = req.query;
     const skip = (page - 1) * limit;
@@ -21,7 +20,7 @@ const getAll = async (req, res) => {
 const getContactById = async (req, res, next) => {
     const { contactId } = req.params;
     const { _id } = req.user;
-    const contact = await Contact.findOneAndUpdate({ _id: contactId, owner: _id }, req.body, { new: true });
+    const contact = await Contact.findOne({ _id: contactId, owner: _id });
     if (!contact) {
         res.status(404).json({
             status: 'error',
@@ -57,14 +56,12 @@ const removeContact = async (req, res, next) => {
 
 const addContact = async (req, res) => {
     const _id = req.user._id;
-    // const { _id } = req.user;
     const { name, email, phone } = req.body;
     const { error, value } = schemaCreateContact.validate({ name, phone, email })
 
     if (error) {
         return res.status(400).json({ message: "missing required name field" });
     }
-
     const newContact = await Contact.create({ ...value, owner: _id })
     res.status(201).json(newContact);
 };
@@ -78,7 +75,6 @@ const updateContact = async (req, res, next) => {
     if (error) {
         return res.status(400).json({ message: "missing required name field" });
     }
-
     try {
         const result = await Contact.findOneAndUpdate({ _id: contactId, owner: _id }, value, { new: true });
         if (result) {
@@ -109,7 +105,6 @@ const updateStatusContact = async (req, res, next) => {
             message: 'missing field favorite',
         });
     }
-
     const { error, value: validatedData } = schemaUpdateStatusContact.validate({ favorite });
 
     if (error) {
