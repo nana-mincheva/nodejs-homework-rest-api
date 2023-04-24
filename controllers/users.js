@@ -19,11 +19,11 @@ const register = async (req, res) => {
   if (user) {
     throw HttpError(409, "Email in use");
     }
-    const hashPassword = await bcrypt.hash(password, 10);
+  const hashPassword = await bcrypt.hash(password, 10);
     
-    const avatarURL = gravatar.url(email);
-    const newUser = await User.create({ ...req.body, password: hashPassword, avatarURL, });
-     const id = newUser._id;
+  const avatarURL = gravatar.url(email);
+  const newUser = await User.create({ ...req.body, password: hashPassword, avatarURL });
+  const id = newUser._id;
   const token = jwt.sign({ id }, secret, { expiresIn: "23h" });
   await User.findByIdAndUpdate(id, { token });
 
@@ -39,21 +39,21 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const email = req.body.email;
   const password  = req.body.password ;
-    const user = await User.findOne({ email });
+  const user = await User.findOne({ email });
     if (!user) {
         throw HttpError(401, "Email or password is wrong");
     };
 
-    const passwordCompare = await bcrypt.compare(password, user.password);
+  const passwordCompare = await bcrypt.compare(password, user.password);
     if (!passwordCompare) {
         throw HttpError(401, "Not authorized");
     };
 
-    const payload = {
+  const payload = {
         id: user._id,
     }
 
-    const token = jwt.sign(payload, secret, { expiresIn: "23h" });
+  const token = jwt.sign(payload, secret, { expiresIn: "23h" });
     await User.findByIdAndUpdate(user._id, { token });
     res.json({
         token,
@@ -86,7 +86,7 @@ const logout = async (req, res) => {
 const updateSubscription = async (req, res) => {
   const _id = req.user._id;
   const email = req.user.email;
-    const { subscription } = req.body;
+  const { subscription } = req.body;
     await User.findByIdAndUpdate(_id, { subscription });
 
     res.json({
