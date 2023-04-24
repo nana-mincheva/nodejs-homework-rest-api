@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const app = require("../app");
 
 const { DB_HOST, PORT = 3000 } = process.env;
+
 /* eslint-disable */
 describe("test for login controllers", () => {
     beforeAll(() => {
@@ -27,4 +28,7 @@ describe("test for login controllers", () => {
         expect(response.status).toBe(200);
         expect(typeof response.body.token).toBe("string");
     });
+  afterAll(async () => {
+  await mongoose.disconnect();
+});
 });
