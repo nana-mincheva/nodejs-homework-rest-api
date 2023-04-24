@@ -1,7 +1,13 @@
+const path = require('path');
+const fs = require('fs/promises');
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { User } = require("../models/user");
 const { HttpError, ctrlWrapper } = require("../helpers");
+const gravatar = require("gravatar");
+const Jimp = require("jimp");
+
+const avatarsDir = path.join(__dirname, "../../", "public", "avatars");
 
 require("dotenv").config();
 const secret = process.env.SECRET_KEY;
@@ -13,10 +19,11 @@ const register = async (req, res) => {
   if (user) {
     throw HttpError(409, "Email in use");
     }
-    const hashPassword = await bcrypt.hash(password, 10);
-
-    const newUser = await User.create({ ...req.body, password: hashPassword });
-     const id = newUser._id;
+  const hashPassword = await bcrypt.hash(password, 10);
+    
+  const avatarURL = gravatar.url(email);
+  const newUser = await User.create({ ...req.body, password: hashPassword, avatarURL });
+  const id = newUser._id;
   const token = jwt.sign({ id }, secret, { expiresIn: "23h" });
   await User.findByIdAndUpdate(id, { token });
 
@@ -32,21 +39,21 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const email = req.body.email;
   const password  = req.body.password ;
-    const user = await User.findOne({ email });
+  const user = await User.findOne({ email });
     if (!user) {
         throw HttpError(401, "Email or password is wrong");
     };
 
-    const passwordCompare = await bcrypt.compare(password, user.password);
+  const passwordCompare = await bcrypt.compare(password, user.password);
     if (!passwordCompare) {
         throw HttpError(401, "Not authorized");
     };
 
-    const payload = {
+  const payload = {
         id: user._id,
     }
 
-    const token = jwt.sign(payload, secret, { expiresIn: "23h" });
+  const token = jwt.sign(payload, secret, { expiresIn: "23h" });
     await User.findByIdAndUpdate(user._id, { token });
     res.json({
         token,
@@ -79,7 +86,7 @@ const logout = async (req, res) => {
 const updateSubscription = async (req, res) => {
   const _id = req.user._id;
   const email = req.user.email;
-    const { subscription } = req.body;
+  const { subscription } = req.body;
     await User.findByIdAndUpdate(_id, { subscription });
 
     res.json({
@@ -88,10 +95,29 @@ const updateSubscription = async (req, res) => {
     })
 };
 
+const updateAvatar = async (req, res) => {
+  const _id = req.user._id;
+  const { path: tempUpload, originalname } = req.file;
+  const filename = `${_id}_${originalname}`;
+  const resultUpload = path.join(avatarsDir, filename);
+
+  Jimp.read(tempUpload, async (err, ava) => {
+    if (err) throw err;
+    await ava.resize(250, 250).writeAsync(tempUpload);
+    await fs.rename(tempUpload, resultUpload);
+  });
+  const avatarURL = path.join("avatars", filename);
+  await User.findByIdAndUpdate(_id, { avatarURL });
+  res.json({
+    avatarURL,
+  });
+};
+
 module.exports = {
     register: ctrlWrapper(register),
     login: ctrlWrapper(login),
     getCurrent: ctrlWrapper(getCurrent),
     logout: ctrlWrapper(logout),
-    updateSubscription: ctrlWrapper(updateSubscription)
+    updateSubscription: ctrlWrapper(updateSubscription),
+    updateAvatar: ctrlWrapper(updateAvatar),
 };
