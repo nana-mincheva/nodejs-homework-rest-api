@@ -10,6 +10,10 @@ router.post("/login", validation(schemas.loginSchema), ctrl.login);
 
 router.get("/current", auth, ctrl.getCurrent);
 
+router.get("/verify/:verificationToken", ctrl.verify);
+
+router.post("/verify", validation(schemas.emailSchema), ctrl.resendVerifyEmail);
+
 router.post("/logout", auth, ctrl.logout);
 
 router.patch("/", auth, validation(schemas.updateSubscription), ctrl.updateSubscription);
