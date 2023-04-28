@@ -158,6 +158,7 @@ const resendVerifyEmail = async (req, res) => {
   await sendEmail(verifyEmail);
   res.json({ message: "Verification email sent" });
 };
+
 module.exports = {
     register: ctrlWrapper(register),
     login: ctrlWrapper(login),
